@@ -1,0 +1,25 @@
+From: Pino Toscano <pino@kde.org>
+Date: Sat, 12 Apr 2014 10:21:47 +0000
+Subject: ruby: do not reject ruby versions greater than 1.9
+X-Git-Tag: v4.12.5
+X-Git-Url: http://quickgit.kde.org/?p=kross-interpreters.git&a=commitdiff&h=7f919486919fb083670f66b5d9054a1c5e2179d0
+---
+ruby: do not reject ruby versions greater than 1.9
+
+krossruby seems to build fine with them, so do not require just ruby
+1.9.x.
+---
+
+
+--- a/ruby/CMakeLists.txt
++++ b/ruby/CMakeLists.txt
+@@ -1,9 +1,6 @@
+ find_package(Ruby 1.9 QUIET)
+
+-if( RUBY_VERSION VERSION_GREATER "1.10" )
+-    message(STATUS "Found Ruby: ${RUBY_EXECUTABLE} (found version \"${RUBY_VERSION}\") but only 1.9.x supported")
+-    set(RUBY_FOUND False)
+-else()
++if(RUBY_FOUND)
+     message(STATUS "Found Ruby: ${RUBY_EXECUTABLE} (found version \"${RUBY_VERSION}\")")
+ endif()

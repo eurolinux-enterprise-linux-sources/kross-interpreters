@@ -4,20 +4,23 @@
 ## java needs love
 #define kross_java 1
 
-%if 0%{?fedora} > 16 || 0%{?rhel} > 6
-# busted, 
-# http://bugzilla.redhat.com/794742
-# http://bugs.kde.org/243565
+%if 0%{?fedora} > 18 || 0%{?rhel} > 6
+%define kross_ruby 1
+%global ruby_release 1
+%else
+%if 0%{?fedora} >= 16 && 0%{?fedora} <= 18 || 0%{?rhel} == 6
+%define kross_ruby 1
 %global ruby_abi 1.9.1
 %else
 %define kross_ruby 1
 %global ruby_abi 1.8
 %endif
+%endif
 
-Name:    kross-interpreters 
+Name:    kross-interpreters
 Version: 4.10.5
-Release: 3%{?dist}
-Summary: Kross interpreters 
+Release: 8%{?dist}
+Summary: Kross interpreters
 
 License: LGPLv2+
 URL:     http://developer.kde.org/language-bindings/
@@ -28,8 +31,10 @@ URL:     http://developer.kde.org/language-bindings/
 %global stable stable
 %endif
 Source0: http://download.kde.org/%{stable}/%{version}/src/%{name}-%{version}.tar.xz
+Patch0:  kross-interpreters-ruby2.patch
+Patch1:  kross-interpreters-logical-expression.patch
 
-BuildRequires: kdelibs4-devel >= %{version} 
+BuildRequires: kdelibs4-devel >= %{version}
 %if 0%{?kross_falcon}
 BuildRequires: Falcon-devel
 %endif
@@ -62,7 +67,7 @@ Requires: %{name} = %{version}-%{release}
 Falcon plugin for the Kross archtecture in KDE.
 
 %package -n kross-java
-Summary:  Kross plugin for java 
+Summary:  Kross plugin for java
 Requires: kdelibs4 >= %{version}
 Provides: kross(java) = %{version}-%{release}
 Requires: %{name} = %{version}-%{release}
@@ -72,6 +77,7 @@ Java plugin for the Kross archtecture in KDE.
 %package -n kross-ruby
 Summary:  Kross plugin for ruby
 %{?ruby_abi:Requires: ruby(abi) = %{ruby_abi}}
+%{?ruby_release:Requires: ruby(release)}
 Requires: kdelibs4 >= %{version}
 Provides: kross(ruby) = %{version}-%{release}
 Requires: %{name} = %{version}-%{release}
@@ -81,7 +87,8 @@ Ruby plugin for the Kross architecture in KDE.
 
 %prep
 %setup -q
-
+%patch0 -p1 -b .ruby2
+%patch1 -p1 -b .logical-expression
 
 %build
 mkdir -p %{_target_platform}
@@ -96,6 +103,11 @@ make %{?_smp_mflags} -C %{_target_platform}
 rm -rf %{buildroot}
 make install/fast DESTDIR=%{buildroot} -C %{_target_platform}
 
+
+%if ! 0%{?kross_java}
+rm -rf %{buildroot}%{_kde4_libdir}/kde4/krossjava.so \
+       %{buildroot}%{_kde4_libdir}/kde4/kross/kross.jar
+%endif
 
 %clean
 rm -rf %{buildroot}
@@ -114,6 +126,8 @@ rm -rf %{buildroot}
 
 %if 0%{?kross_java}
 %files -n kross-java
+%{_kde4_libdir}/kde4/kross/kross.jar
+%{_kde4_libdir}/kde4/krossjava.so
 %endif
 
 %if 0%{?kross_ruby}
@@ -123,6 +137,28 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Aug 27 2015 Scientific Linux Auto Patch Process <SCIENTIFIC-LINUX-DEVEL@LISTSERV.FNAL.GOV>
+- Eliminated rpmbuild "bogus date" error due to inconsistent weekday,
+  by assuming the date is correct and changing the weekday.
+
+* Wed Aug 19 2015 Jan Grulich <jgrulich@redhat.com> - 4.10.5-8
+- Properly remove kross-java files
+  Resolves: bz#1253143, build failure when java is installed in build enviroment
+
+* Wed Aug 19 2015 Jan Grulich <jgrulich@redhat.com> - 4.10.5-7
+- Fix installed files for -java subpkg
+  Resolves: bz#1253143, build failure when java is installed in build enviroment
+
+* Wed Aug 19 2015 Than Ngo <than@redhat.com> - 4.10.5-6
+- Resolves: bz#1253143, build failure when java is installed in build enviroment
+
+* Wed Aug 12 2015 Jan Grulich <jgrulich@redhat.com> - 4.10.5-5
+- Fix logical expression reported by coverity scan
+
+* Tue Aug 04 2015 Jan Grulich <jgrulich@redhat.com> - 4.10.5-4
+- Enable kross-ruby with ruby-2.0
+  Resolves: bz#1133705
+
 * Fri Jan 24 2014 Daniel Mach <dmach@redhat.com> - 4.10.5-3
 - Mass rebuild 2014-01-24
 
